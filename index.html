@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🚀 KMH Quantum Flow v6.0 — Painel Cognitivo Total</title>
+  <title>🚀 KMH Quantum Flow v6.1 — Painel Cognitivo Total</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body class="bg-gray-900 text-gray-100 flex flex-col items-center min-h-screen p-6">
-  <h1 class="text-3xl font-bold mb-2 text-center">🚀 KMH Quantum Flow v6.0 — Painel Cognitivo Total</h1>
-  <p class="text-sm text-gray-400 mb-6 text-center">Módulo Cognitivo com predição, insights automáticos e aprendizado autônomo.</p>
+  <h1 class="text-3xl font-bold mb-2 text-center">🚀 KMH Quantum Flow v6.1 — Painel Cognitivo Total</h1>
+  <p class="text-sm text-gray-400 mb-6 text-center">Painel cognitivo com predição, insights automáticos e aprendizado autônomo.</p>
 
   <!-- DASHBOARD -->
   <div class="flex flex-wrap justify-center gap-6 w-full max-w-5xl">
@@ -59,7 +59,7 @@
   </div>
 
   <footer class="mt-8 text-sm opacity-60 text-center">
-    KMH Quantum Flow v6.0 — Cognitive Engine • Powered by Klebber Haake ©2025
+    KMH Quantum Flow v6.1 — Cognitive Engine • Powered by Klebber Haake ©2025
   </footer>
 
   <script>
@@ -69,6 +69,7 @@
     const SUPABASE_URL = "https://nfvbrdjbiolpclskwqzj.supabase.co/rest/v1";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5mdmJyZGpiaW9scGNsc2t3cXpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3MTgxNDUsImV4cCI6MjA3ODI5NDE0NX0.BfUIC-f_WFZj9OfY6yYSRdueD5q8qSv4pRIVNykeJVE";
     const HEADERS = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` };
+    const isGithub = location.hostname.includes("github.io"); // modo leitura pública
 
     // ==============================
     // FUNÇÃO PRINCIPAL
@@ -81,7 +82,7 @@
 
         const data = await response.json();
         if (!data.length) {
-          await generateSimulatedData(); // aprendizado autônomo
+          if (!isGithub) await generateSimulatedData(); // simula apenas localmente
           return loadMetrics(true);
         }
 
@@ -106,7 +107,7 @@
         drawChart(data);
         generateInsight(latTrend, sucTrend, avgLatency, successRate, prediction, kmhIndex);
       } catch (err) {
-        document.getElementById("insightText").innerText = "⚠️ Erro de conexão com a API Supabase.";
+        document.getElementById("insightText").innerText = "⚠️ Operando em modo de leitura cognitiva (sem gravação).";
       }
     }
 
@@ -157,12 +158,22 @@
         merge_success_rate: +(Math.random() * (0.98 - 0.85) + 0.85).toFixed(2),
         timestamp: new Date().toISOString(),
       };
-      await fetch(`${SUPABASE_URL}/tuning_logs`, {
-        method: "POST",
-        headers: { ...HEADERS, "Content-Type": "application/json" },
-        body: JSON.stringify(newEntry),
-      });
-      console.log("🔄 Simulação automática registrada:", newEntry);
+
+      if (isGithub) {
+        console.log("🌐 Modo público: simulação local apenas.", newEntry);
+        return;
+      }
+
+      try {
+        await fetch(`${SUPABASE_URL}/tuning_logs`, {
+          method: "POST",
+          headers: { ...HEADERS, "Content-Type": "application/json" },
+          body: JSON.stringify(newEntry),
+        });
+        console.log("🔄 Simulação registrada no Supabase:", newEntry);
+      } catch {
+        console.warn("⚠️ Supabase bloqueou gravação pública. Somente leitura ativa.");
+      }
     }
 
     // ==============================
