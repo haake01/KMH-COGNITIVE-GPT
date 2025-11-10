@@ -1,0 +1,9 @@
+{
+  "version": "4.8",
+  "name": "KMH Cognitive Quantum Dashboard",
+  "description": "Painel de monitoramento da versão KMH Preditivo v4.8 – Quantum Insight",
+  "supabase_endpoint": "https://nfvbrdjbiolpclskwqzj.supabase.co",
+  "tables": ["kmh_versions", "tuning_logs"],
+  "update_interval_seconds": 60,
+  "contact": "kmh@haake.energy"
+}

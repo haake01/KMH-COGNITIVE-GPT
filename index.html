@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KMH Cognitive Quantum Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss/dist/tailwind.min.css">
+</head>
+<body class="bg-gray-900 text-gray-100 flex flex-col items-center p-8">
+  <h1 class="text-3xl font-bold mb-4">🚀 KMH Cognitive Quantum Insight Dashboard</h1>
+  <div id="metrics" class="grid grid-cols-2 gap-6 w-full max-w-3xl">
+    <div class="p-4 bg-gray-800 rounded-xl shadow-lg">
+      <h2 class="text-xl font-semibold">Latência Média</h2>
+      <p id="avg_latency" class="text-2xl mt-2">⏳ Carregando...</p>
+    </div>
+    <div class="p-4 bg-gray-800 rounded-xl shadow-lg">
+      <h2 class="text-xl font-semibold">Taxa de Sucesso</h2>
+      <p id="merge_success" class="text-2xl mt-2">📊 Atualizando...</p>
+    </div>
+  </div>
+  <footer class="mt-10 text-sm opacity-60">KMH Cognitive v4.8 — Quantum Insight</footer>
+
+  <script>
+    async function loadMetrics() {
+      try {
+        const response = await fetch("https://your-monitoring.example.com/latency");
+        const data = await response.json();
+        document.getElementById("avg_latency").innerText = data.avg_response_time_seconds + " s";
+        document.getElementById("merge_success").innerText = (data.merge_success_rate * 100).toFixed(1) + "%";
+      } catch (e) {
+        document.getElementById("avg_latency").innerText = "Erro ao carregar";
+        document.getElementById("merge_success").innerText = "Erro ao conectar";
+      }
+    }
+    loadMetrics();
+  </script>
+</body>
+</html>
