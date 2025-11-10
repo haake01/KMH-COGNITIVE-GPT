@@ -1,59 +1,335 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>KMH Cognitive Quantum Dashboard</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss/dist/tailwind.min.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>KMH Quantum Flow v5.0 — Dashboard Cognitivo</title>
+
+  <!-- Tailwind (CDN) -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    body { background-color: #0f1724; color: #e6eef8; }
+    .card { background: #0b1220; }
+    .light body { background-color: #f6f8fb; color: #0b1220; }
+    .light .card { background: #ffffff; }
+    .small-muted { color: rgba(255,255,255,0.55); }
+    .metric-big { font-size: 2rem; font-weight: 700; }
+  </style>
 </head>
-<body class="bg-gray-900 text-gray-100 flex flex-col items-center p-8">
-  <h1 class="text-3xl font-bold mb-4">🚀 KMH Cognitive Quantum Insight Dashboard</h1>
+<body class="p-6 min-h-screen flex flex-col items-center">
 
-  <div id="metrics" class="grid grid-cols-2 gap-6 w-full max-w-3xl">
-    <div class="p-4 bg-gray-800 rounded-xl shadow-lg">
-      <h2 class="text-xl font-semibold">Latência Média</h2>
-      <p id="avg_latency" class="text-2xl mt-2">⏳ Carregando...</p>
+  <header class="w-full max-w-6xl mb-6">
+    <div class="flex justify-between items-center">
+      <h1 class="text-2xl font-bold flex items-center gap-3">
+        🚀 KMH Quantum Flow v5.0 — Painel Cognitivo
+        <span id="kmh_index_badge" class="ml-4 px-3 py-1 rounded-full text-sm font-medium bg-gray-800 small-muted">KMH Index — calculando...</span>
+      </h1>
+      <div class="flex items-center gap-3">
+        <div id="connection_status" class="px-3 py-1 rounded text-sm bg-yellow-500 text-black">⏳ Conectando...</div>
+        <button id="themeToggle" class="px-3 py-1 rounded bg-gray-800 small-muted">Toggle Tema</button>
+      </div>
     </div>
-    <div class="p-4 bg-gray-800 rounded-xl shadow-lg">
-      <h2 class="text-xl font-semibold">Taxa de Sucesso</h2>
-      <p id="merge_success" class="text-2xl mt-2">📊 Atualizando...</p>
-    </div>
-  </div>
+    <p class="text-sm small-muted mt-2">Painel com predição, insights automáticos, gráfico histórico e export.</p>
+  </header>
 
-  <footer class="mt-10 text-sm opacity-60">
-    KMH Cognitive v4.8 — Quantum Insight
+  <!-- Top metrics -->
+  <main class="w-full max-w-6xl grid grid-cols-1 md:grid-cols-3 gap-6">
+    <section class="card p-6 rounded-lg shadow-lg">
+      <h3 class="text-sm small-muted">⏱ Latência Média (último)</h3>
+      <div id="latency_val" class="metric-big mt-2">— s</div>
+      <div id="latency_trend" class="text-sm small-muted mt-1">Tendência: —</div>
+    </section>
+
+    <section class="card p-6 rounded-lg shadow-lg">
+      <h3 class="text-sm small-muted">📊 Taxa de Sucesso (último)</h3>
+      <div id="success_val" class="metric-big mt-2">— %</div>
+      <div id="success_trend" class="text-sm small-muted mt-1">Tendência: —</div>
+    </section>
+
+    <section class="card p-6 rounded-lg shadow-lg">
+      <h3 class="text-sm small-muted">🔮 Previsão (próxima)</h3>
+      <div id="prediction" class="text-sm mt-2">Carregando predição...</div>
+      <div class="mt-3">
+        <button id="exportCsv" class="px-3 py-1 rounded bg-blue-600">Export CSV</button>
+        <button id="manualRefresh" class="ml-2 px-3 py-1 rounded bg-gray-700 small-muted">Atualizar</button>
+      </div>
+    </section>
+
+    <!-- Full width section for graphs and insights -->
+    <section class="col-span-1 md:col-span-3 card p-6 rounded-lg shadow-lg mt-2">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="md:col-span-2">
+          <canvas id="chartLatency" height="120"></canvas>
+          <canvas id="chartSuccess" height="120" class="mt-6"></canvas>
+        </div>
+        <aside class="p-4 bg-gray-900 rounded-lg small-muted">
+          <h4 class="font-semibold mb-2">Insight Automático</h4>
+          <div id="insightText">Aguardando análises...</div>
+          <hr class="my-3" />
+          <div class="text-xs small-muted">
+            <div id="lastUpdate">Última atualização: —</div>
+            <div id="recordsCount">Registros: —</div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <footer class="w-full max-w-6xl mt-8 text-sm small-muted">
+    KMH Cognitive — v5.0 • Desenvolvido por Klebber Haake
   </footer>
 
-  <script>
-    // 🔹 INSIRA AQUI SUA URL REST E CHAVE PÚBLICA DO SUPABASE
-    const SUPABASE_URL = "https://nfvbrdjbiolpclskwqzj.supabase.co/rest/v1";  // ← AQUI
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5mdmJyZGpiaW9scGNsc2t3cXpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3MTgxNDUsImV4cCI6MjA3ODI5NDE0NX0.BfUIC-f_WFZj9OfY6yYSRdueD5q8qSv4pRIVNykeJVE";  // ← AQUI
-    const HEADERS = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` };
+<script>
+/* ====================
+   CONFIGURE AQUI → substituir os valores abaixo
+   ==================== */
+const SUPABASE_URL = "https://nfvbrdjbiolpclskwqzj.supabase.co/rest/v1"; // ← AQUI: sua URL com /rest/v1
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5mdmJyZGpiaW9scGNsc2t3cXpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3MTgxNDUsImV4cCI6MjA3ODI5NDE0NX0.BfUIC-f_WFZj9OfY6yYSRdueD5q8qSv4pRIVNykeJVEKEY_AQUI"; // ← AQUI: sua anon key (se optar por inserir aqui)
+const TELEGRAM_WEBHOOK_URL = ""; // ← AQUI: opcional (https://api.telegram.org/bot<TOKEN>/sendMessage?chat_id=...&text=)
+const ALERT_LATENCY_THRESHOLD = 2.0; // segundos - exemplo
+const ALERT_SUCCESS_THRESHOLD = 0.95; // 0-1
 
-    async function loadMetrics() {
-      try {
-        const res = await fetch(`${SUPABASE_URL}/tuning_logs?order=timestamp.desc&limit=1`, {
-          headers: HEADERS
-        });
-        const data = await res.json();
+const HEADERS = { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` };
 
-        if (data.length > 0) {
-          const { avg_latency, merge_success_rate } = data[0];
-          document.getElementById("avg_latency").innerText = `${avg_latency.toFixed(2)} s`;
-          document.getElementById("merge_success").innerText = `${(merge_success_rate * 100).toFixed(1)} %`;
-        } else {
-          document.getElementById("avg_latency").innerText = "Sem dados ainda";
-          document.getElementById("merge_success").innerText = "-";
-        }
-      } catch (e) {
-        document.getElementById("avg_latency").innerText = "Erro ao carregar";
-        document.getElementById("merge_success").innerText = "Erro ao conectar";
-      }
-    }
+/* ====================
+   Helpers: regressão linear simples (para tendência/predição)
+   ==================== */
+function linearRegression(xs, ys) {
+  const n = xs.length;
+  if (n === 0) return { slope: 0, intercept: 0 };
+  const meanX = xs.reduce((a,b)=>a+b,0)/n;
+  const meanY = ys.reduce((a,b)=>a+b,0)/n;
+  let num=0, den=0;
+  for (let i=0;i<n;i++){ num += (xs[i]-meanX)*(ys[i]-meanY); den += (xs[i]-meanX)*(xs[i]-meanX); }
+  const slope = den === 0 ? 0 : num/den;
+  const intercept = meanY - slope*meanX;
+  return { slope, intercept };
+}
 
-    // Executa imediatamente e repete a cada 60s
-    loadMetrics();
-    setInterval(loadMetrics, 60000);
-  </script>
+/* ====================
+   DOM references
+   ==================== */
+const connectionStatus = document.getElementById('connection_status');
+const latencyVal = document.getElementById('latency_val');
+const latencyTrend = document.getElementById('latency_trend');
+const successVal = document.getElementById('success_val');
+const successTrend = document.getElementById('success_trend');
+const predictionEl = document.getElementById('prediction');
+const insightText = document.getElementById('insightText');
+const lastUpdateEl = document.getElementById('lastUpdate');
+const recordsCountEl = document.getElementById('recordsCount');
+const kmhIndexBadge = document.getElementById('kmh_index_badge');
+const manualRefreshBtn = document.getElementById('manualRefresh');
+const exportCsvBtn = document.getElementById('exportCsv');
+const themeToggleBtn = document.getElementById('themeToggle');
+
+let chartLatency, chartSuccess;
+
+/* ====================
+   Init: Chart.js charts
+   ==================== */
+function initCharts() {
+  const ctxL = document.getElementById('chartLatency').getContext('2d');
+  chartLatency = new Chart(ctxL, {
+    type: 'line',
+    data: { labels: [], datasets: [{ label: 'Latência (s)', data: [], borderColor: 'rgba(59,130,246,1)', backgroundColor: 'rgba(59,130,246,0.1)', tension: 0.2 }] },
+    options: { responsive: true, plugins: { legend: { display: true } }, scales: { x: { display: true }, y: { beginAtZero: true } } }
+  });
+
+  const ctxS = document.getElementById('chartSuccess').getContext('2d');
+  chartSuccess = new Chart(ctxS, {
+    type: 'line',
+    data: { labels: [], datasets: [{ label: 'Taxa de Sucesso (%)', data: [], borderColor: 'rgba(34,197,94,1)', backgroundColor: 'rgba(34,197,94,0.08)', tension: 0.2 }] },
+    options: { responsive: true, plugins: { legend: { display: true } }, scales: { x: { display: true }, y: { min: 0, max: 100 } } }
+  });
+}
+
+/* ====================
+   Fetch data from Supabase
+   ==================== */
+async function fetchTuningLogs(limit = 200) {
+  try {
+    const endpoint = `${SUPABASE_URL}/tuning_logs?select=id,avg_latency,merge_success_rate,timestamp&order=timestamp.asc&limit=${limit}`;
+    const res = await fetch(endpoint, { headers: HEADERS });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    console.log('Dados recebidos', data.length);
+    connectionStatus.innerText = '🟢 Conectado ao Supabase';
+    connectionStatus.className = 'px-3 py-1 rounded text-sm bg-green-400 text-black';
+    return data;
+  } catch (err) {
+    console.error('Erro ao buscar dados Supabase:', err);
+    connectionStatus.innerText = '🔴 Erro ao conectar';
+    connectionStatus.className = 'px-3 py-1 rounded text-sm bg-red-500 text-black';
+    return [];
+  }
+}
+
+/* ====================
+   Update UI: charts, metrics, predictions, insights
+   ==================== */
+function updateChartsAndMetrics(records) {
+  if (!records || records.length === 0) {
+    latencyVal.innerText = 'Sem dados';
+    successVal.innerText = 'Sem dados';
+    insightText.innerText = 'Ainda não há registros suficientes para análise.';
+    lastUpdateEl.innerText = 'Última atualização: —';
+    recordsCountEl.innerText = 'Registros: 0';
+    predictionEl.innerText = 'Sem predição';
+    kmhIndexBadge.innerText = 'KMH Index — N/A';
+    return;
+  }
+
+  // prepare arrays
+  const labels = records.map(r => new Date(r.timestamp).toLocaleString());
+  const latencies = records.map(r => Number(r.avg_latency));
+  const successes = records.map(r => Number(r.merge_success_rate) * 100); // convert to %
+  const timestamps = records.map((r,i) => i); // simple index for regression
+
+  // charts
+  chartLatency.data.labels = labels;
+  chartLatency.data.datasets[0].data = latencies;
+  chartLatency.update();
+
+  chartSuccess.data.labels = labels;
+  chartSuccess.data.datasets[0].data = successes;
+  chartSuccess.update();
+
+  // last values
+  const last = records[records.length - 1];
+  latencyVal.innerText = `${Number(last.avg_latency).toFixed(2)} s`;
+  successVal.innerText = `${(Number(last.merge_success_rate)*100).toFixed(1)} %`;
+  lastUpdateEl.innerText = `Última atualização: ${new Date(last.timestamp).toLocaleString()}`;
+  recordsCountEl.innerText = `Registros: ${records.length}`;
+
+  // regressão linear para tendência (usar índices simples)
+  const regLatency = linearRegression(timestamps, latencies);
+  const regSuccess = linearRegression(timestamps, successes);
+
+  const slopeLat = regLatency.slope;
+  const slopeSucc = regSuccess.slope;
+
+  latencyTrend.innerText = `Tendência (s/step): ${slopeLat.toFixed(4)} ${slopeLat > 0 ? '↑' : slopeLat < 0 ? '↓' : '→'}`;
+  successTrend.innerText = `Tendência (%/step): ${slopeSucc.toFixed(4)} ${slopeSucc > 0 ? '↑' : slopeSucc < 0 ? '↓' : '→'}`;
+
+  // previsão (próximo ponto = slope * nextIndex + intercept)
+  const nextIndex = timestamps.length;
+  const predictLatency = regLatency.slope * nextIndex + regLatency.intercept;
+  const predictSuccess = regSuccess.slope * nextIndex + regSuccess.intercept;
+
+  predictionEl.innerText = `Latência estimada: ${predictLatency.toFixed(2)} s • Sucesso estimado: ${predictSuccess.toFixed(1)} %`;
+
+  // KMH Index
+  // formula exemplo: (sucesso% - (latência * 10)). Ajuste conforme modelo desejado.
+  const kmhIndex = ( (Number(last.merge_success_rate)*100) - (Number(last.avg_latency) * 10) );
+  kmhIndexBadge.innerText = `KMH Index: ${Math.round(kmhIndex)}`;
+  if (kmhIndex >= 90) kmhIndexBadge.style.background = '#10b981'; // green
+  else if (kmhIndex >= 80) kmhIndexBadge.style.background = '#f59e0b'; // yellow
+  else kmhIndexBadge.style.background = '#ef4444'; // red
+
+  // insights (heurísticas básicas)
+  const insights = [];
+  if (Number(last.avg_latency) > ALERT_LATENCY_THRESHOLD) {
+    insights.push(`Atenção: latência média acima do limite (${ALERT_LATENCY_THRESHOLD}s). Considere reduzir densidade cognitiva ou reavaliar prefetech.`);
+  } else {
+    insights.push('Latência dentro do esperado.');
+  }
+  if (Number(last.merge_success_rate) < ALERT_SUCCESS_THRESHOLD) {
+    insights.push(`Taxa de sucesso (${(Number(last.merge_success_rate)*100).toFixed(1)}%) abaixo da meta (${ALERT_SUCCESS_THRESHOLD*100}%). Verificar prompts e contexto.`);
+  } else {
+    insights.push('Taxa de sucesso dentro da meta.');
+  }
+
+  // trend insights
+  if (slopeLat > 0.01) insights.push('Tendência crescente de latência detectada — monitorar próximos pontos.');
+  if (slopeSucc < -0.05) insights.push('Tendência negativa na taxa de sucesso — investigar causas.');
+
+  insightText.innerHTML = insights.map(i=>`<div>• ${i}</div>`).join('');
+  // optional: trigger alert if critical
+  if (Number(last.avg_latency) > ALERT_LATENCY_THRESHOLD || Number(last.merge_success_rate) < ALERT_SUCCESS_THRESHOLD) {
+    trySendTelegramAlert(last, kmhIndex);
+  }
+}
+
+/* ====================
+   Export CSV
+   ==================== */
+function arrayToCSV(arr) {
+  if (!arr || !arr.length) return '';
+  const keys = Object.keys(arr[0]);
+  const header = keys.join(',');
+  const rows = arr.map(r => keys.map(k => `"${String(r[k]).replace(/"/g,'""')}"`).join(','));
+  return [header, ...rows].join('\n');
+}
+function downloadCSV(text, filename='kmh_tuning_logs.csv') {
+  const blob = new Blob([text], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+/* ====================
+   Telegram alert (optional)
+   ==================== */
+async function trySendTelegramAlert(last, kmhIndex) {
+  if (!TELEGRAM_WEBHOOK_URL) return;
+  try {
+    const text = encodeURIComponent(`KMH Alert\nLatência: ${last.avg_latency}s\nSucesso: ${(last.merge_success_rate*100).toFixed(1)}%\nKMH Index: ${Math.round(kmhIndex)}\nTimestamp: ${last.timestamp}`);
+    const url = TELEGRAM_WEBHOOK_URL.includes('sendMessage') ? `${TELEGRAM_WEBHOOK_URL}&text=${text}` : `${TELEGRAM_WEBHOOK_URL}?text=${text}`;
+    await fetch(url, { method: 'GET' });
+    console.log('Telegram notification sent.');
+  } catch (e) {
+    console.warn('Falha ao enviar Telegram:', e);
+  }
+}
+
+/* ====================
+   Main loop
+   ==================== */
+async function mainLoop() {
+  const raw = await fetchTuningLogs(500); // busca até 500 registros (ajustável)
+  // ensure sorted by timestamp asc for charts
+  raw.sort((a,b)=> new Date(a.timestamp) - new Date(b.timestamp));
+  updateChartsAndMetrics(raw);
+  return raw;
+}
+
+/* ====================
+   Event listeners
+   ==================== */
+manualRefreshBtn.addEventListener('click', async () => {
+  const data = await mainLoop();
+  // user feedback
+  console.log('Refresh completo, registros:', data.length);
+});
+
+exportCsvBtn.addEventListener('click', async () => {
+  const data = await fetchTuningLogs(1000);
+  const csv = arrayToCSV(data);
+  if (csv) downloadCSV(csv);
+});
+
+themeToggleBtn.addEventListener('click', () => {
+  document.documentElement.classList.toggle('light');
+});
+
+/* ====================
+   Bootstrap
+   ==================== */
+initCharts();
+mainLoop();
+// auto refresh every minute
+setInterval(mainLoop, 60000);
+
+</script>
 </body>
 </html>
